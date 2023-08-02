@@ -15,7 +15,7 @@ ver 1.0
 - OpenSearch : 2.9.0
 - Opendashboard : 추가예정
 
-## Requirments
+## Requirements
 - Docker
 - docker-compose
 - Elasticvue
@@ -61,5 +61,27 @@ ver 1.0
   - HOME > NODE > GRID
     ![스크린샷 2023-08-02 오전 10 47 42](https://github.com/Themath93/opensearch-cluster/assets/108844287/f8020dec-19c6-405a-8d0b-daa60bb6a2f7)
 
+6. curl 로 Opensearch REST API 확인
+  ```shell
+  $ curl -XGET http://localhost:9200
+  
+  {
+  "name" : "opensearch-cluster_manager",
+  "cluster_name" : "opensearch-cluster",
+  "cluster_uuid" : "5wPrtmB_RHSqvwp_UdyqfA",
+  "version" : {
+    "distribution" : "opensearch",
+    "number" : "2.9.0",
+    "build_type" : "tar",
+    "build_hash" : "1164221ee2b8ba3560f0ff492309867beea28433",
+    "build_date" : "2023-07-18T21:22:48.164885046Z",
+    "build_snapshot" : false,
+    "lucene_version" : "9.7.0",
+    "minimum_wire_compatibility_version" : "7.10.0",
+    "minimum_index_compatibility_version" : "7.0.0"
+  },
+  "tagline" : "The OpenSearch Project: https://opensearch.org/"
+}
+  ```
 
 [Link]: https://chrome.google.com/webstore/detail/elasticvue/hkedbapjpblbodpgbajblpnlpenaebaa
