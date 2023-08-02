@@ -1,0 +1,57 @@
+FROM ubuntu:20.04
+SHELL ["/bin/bash", "-c"]
+
+RUN apt update -y
+RUN apt install build-essential -y
+RUN apt install wget vim sudo -y
+RUN apt install systemctl -y
+RUN useradd -m worker
+RUN echo 'worker     ALL=NOPASSWD: ALL' >> /etc/sudoers
+RUN sudo echo "vm.max_map_count=262144" >> /etc/sysctl.conf
+RUN sudo sysctl -p
+RUN sudo touch /etc/systemd/system/opensearch.service
+
+RUN sudo echo "[Unit]" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "Description=OpenSearch" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "Wants=network-online.target" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "After=network-online.target" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "[Service]" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "Type=forking" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "RuntimeDirectory=data" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "WorkingDirectory=/home/worker/opensearch" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "ExecStart=/home/worker/opensearch/bin/opensearch -d" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "User=worker" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "Group=worker" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "StandardOutput=journal" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "StandardError=inherit" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "LimitNOFILE=65535" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "LimitNPROC=4096" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "LimitAS=infinity" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "LimitFSIZE=infinity" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "TimeoutStopSec=0" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "KillSignal=SIGTERM" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "KillMode=process" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "SendSIGKILL=no" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "SuccessExitStatus=143" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "TimeoutStartSec=75" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "[Install]" >> /etc/systemd/system/opensearch.service
+RUN sudo echo "WantedBy=multi-user.target" >> /etc/systemd/system/opensearch.service
+
+USER worker
+WORKDIR /home/worker
+
+RUN sudo wget https://artifacts.opensearch.org/releases/bundle/opensearch/2.9.0/opensearch-2.9.0-linux-arm64.tar.gz
+RUN sudo tar xvzf opensearch-2.9.0*.tar.gz
+RUN sudo rm opensearch-2.9.0*.tar.gz
+RUN sudo mv opensearch-2.9.0/ opensearch
+
+RUN echo "export OPENSEARCH_HOME=/home/worker/opensearch" >> ~/.bashrc
+RUN echo "export OPENSEARCH_JAVA_HOME=/home/worker/opensearch/jdk" >> ~/.bashrc
+RUN echo "export PATH=$PATH:$OPENSEARCH_JAVA_HOME/bin"  >> ~/.bashrc
+RUN source ~/.bashrc
+
+
+
+RUN sudo systemctl daemon-reload
+RUN sudo systemctl enable opensearch.service
+

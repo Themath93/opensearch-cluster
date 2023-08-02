@@ -1,0 +1,105 @@
+##################################################################
+# OpenSearch Cluster Env
+# Cluster Mananger Node - 1
+# Coordinator Node - 1
+# Data & Ingest & manager stanby Node - 2
+# Total 4 nodes
+
+# 해당 image 는 Ubuntu:20.04 ARM64 기반이다.
+# 2개의 데이터노드가 quorum 과반으로 구성되어 manager_node Fail 시 투표로 선정됨
+
+#################################################################
+version: '3'
+
+services:
+  mananger:
+    container_name: manager_node
+    restart: always
+    hostname: manager_node
+    user: worker
+    image: mydockername/opensearch:1.0
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+      - "9250:9250"
+      - "9600:9600"
+    command: >
+      /bin/bash -c '
+      echo "plugins.security.disabled: true" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "cluster.name: opensearch-cluster" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "node.name: opensearch-cluster_manager" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "node.roles: [ cluster_manager ]" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "network.host: 0.0.0.0" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "discovery.seed_hosts: [0.0.0.0]" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "cluster.initial_cluster_manager_nodes: ["\"opensearch-cluster_manager"\"]" >> /home/worker/opensearch/config/opensearch.yml &&
+      sudo systemctl start opensearch.service &&
+      sleep infinity'
+
+  datanode1:
+    container_name: datanode1
+    restart: always
+    hostname: datanode1
+    user: worker
+    image: mydockername/opensearch:1.0
+    ports:
+      - "9201:9200"
+      - "9301:9300"
+      - "9251:9250"
+      - "9601:9600"
+    command: >
+      /bin/bash -c '
+      echo "plugins.security.disabled: true" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "cluster.name: opensearch-cluster" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "node.name: opensearch-d1" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "node.roles: [ data, ingest, cluster_manager ]" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "network.host: 0.0.0.0" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "discovery.seed_hosts: [manager_node]" >> /home/worker/opensearch/config/opensearch.yml &&
+      sudo systemctl start opensearch.service &&
+      sleep infinity'
+
+  datanode2:
+    container_name: datanode2
+    restart: always
+    hostname: datanode2
+    user: worker
+    image: mydockername/opensearch:1.0
+    ports:
+      - "9202:9200"
+      - "9302:9300"
+      - "9252:9250"
+      - "9602:9600"
+    command: >
+      /bin/bash -c '
+      echo "plugins.security.disabled: true" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "cluster.name: opensearch-cluster" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "node.name: opensearch-d2" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "node.roles: [ data, ingest, cluster_manager ]" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "network.host: 0.0.0.0" >> /home/worker/opensearch/config/opensearch.yml &&
+      echo "discovery.seed_hosts: [manager_node]" >> /home/worker/opensearch/config/opensearch.yml &&
+      sudo systemctl start opensearch.service &&
+      sleep infinity'
+
+
+  coordinator:
+      container_name: coordinator
+      restart: always
+      hostname: coordinator
+      user: worker
+      image: mydockername/opensearch:1.0
+      ports:
+        - "9203:9200"
+        - "9303:9300"
+        - "9253:9250"
+        - "9603:9600"
+      command: >
+        /bin/bash -c '
+        echo "plugins.security.disabled: true" >> /home/worker/opensearch/config/opensearch.yml &&
+        echo "cluster.name: opensearch-cluster" >> /home/worker/opensearch/config/opensearch.yml &&
+        echo "node.name: opensearch-c1" >> /home/worker/opensearch/config/opensearch.yml &&
+        echo "node.roles: []" >> /home/worker/opensearch/config/opensearch.yml &&
+        echo "network.host: 0.0.0.0" >> /home/worker/opensearch/config/opensearch.yml &&
+        echo "discovery.seed_hosts: [manager_node]" >> /home/worker/opensearch/config/opensearch.yml &&
+        sudo systemctl start opensearch.service &&
+        sleep infinity'
+
+
