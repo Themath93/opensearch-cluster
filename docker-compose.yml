@@ -8,6 +8,8 @@
 # 해당 image 는 Ubuntu:20.04 ARM64 기반이다.
 # 2개의 데이터노드가 quorum 과반으로 구성되어 manager_node Fail 시 투표로 선정됨
 
+# 
+
 #################################################################
 version: '3'
 
@@ -18,6 +20,8 @@ services:
     hostname: manager_node
     user: worker
     image: mydockername/opensearch:1.0
+    networks:
+      - opensearch-cluster-network
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -35,12 +39,15 @@ services:
       sudo systemctl start opensearch.service &&
       sleep infinity'
 
+
   datanode1:
     container_name: datanode1
     restart: always
     hostname: datanode1
     user: worker
     image: mydockername/opensearch:1.0
+    networks:
+      - opensearch-cluster-network
     ports:
       - "9201:9200"
       - "9301:9300"
@@ -63,6 +70,8 @@ services:
     hostname: datanode2
     user: worker
     image: mydockername/opensearch:1.0
+    networks:
+      - opensearch-cluster-network
     ports:
       - "9202:9200"
       - "9302:9300"
@@ -86,6 +95,8 @@ services:
       hostname: coordinator
       user: worker
       image: mydockername/opensearch:1.0
+      networks:
+        - opensearch-cluster-network
       ports:
         - "9203:9200"
         - "9303:9300"
@@ -103,3 +114,6 @@ services:
         sleep infinity'
 
 
+networks:
+  opensearch-cluster-network:
+    external: true
