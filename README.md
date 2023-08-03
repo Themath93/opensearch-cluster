@@ -123,7 +123,7 @@
     ```shell
     docker run -it \
     --name datanode3 \
-    --network test-network \
+    --network opensearch-cluster-network \
     -h datanode3 \
     -u worker \
     -p 9204:9200 \
