@@ -1,7 +1,9 @@
-# OpenSearch 멀티 클러스터 Local의 docker 환경에서 구성해보기
-ver 1.0
+# OpenSearch multi node cluter in Docker
+- Local의 docker 환경에서 구성해보기 + 기존 Custer에 datanode 추가로 Connnect 해보기
+해당 구성환경은 Mac M2 ARM 환경에서 테스트 되었음을 미리 말씀드립니다.
 
 ## Cluster 구성
+---
 #### OpenSearch Cluster
 - 총 4개의 Node
   - cluster_manager node -- 1 개
@@ -9,6 +11,7 @@ ver 1.0
   - coordinator node -- 1 개
 #### Opendashboard 
 - 추가예정
+---
 
 ## 설치 환경
 - OS : ubuntu:20.04
@@ -20,6 +23,8 @@ ver 1.0
 - docker-compose
 - Elasticvue
   -  Chrome 확장 앱 Download [Link]
+---
+---
 
 ### Quick Start
 
@@ -81,7 +86,95 @@ ver 1.0
     "minimum_index_compatibility_version" : "7.0.0"
   },
   "tagline" : "The OpenSearch Project: https://opensearch.org/"
-}
+  }
   ```
+---
 
+### add nodes (docker network)
+- Node를 추가하는 환경을 구성하려면 **[Quick Start 링크]** 를 수행하기전에 1. Docker Network Create 를 먼저 수행 후 진행을 권장한다.
+기존 Cluster에 추가적으로 Node를 추가로 연결할 수 있다. 아래의
+내용은 기존의 datanode 2개에서 3개로 늘리는 과정이다.
+
+1. Docker Network Create
+  - 같은 호스트 내에서 실행중인 컨테이너 간 연결할 수 있도록 돕는 논리적 네트워크이다.
+    - 해당 docker-compose.yml 에서는 네트워크 이름을 **opensearch-cluster-network** 라고 설정이 되어있다.
+    ```shell
+    # opensearch-cluster-network 생성
+    $ docker network create opensearch-cluster-network
+    
+    # docker network 리스트에 생성된 것을 확인
+    % docker network ls
+    NETWORK ID     NAME                         DRIVER    SCOPE
+    ************   bridge                       bridge    local
+    ************   host                         host      local
+    ************   opensearch-cluster-network   bridge    local
+        ...                  ...                 ...       ...
+    ```
+2. Docker Run
+  - 기존에 docker-copose up 을 진행했다면 mydockername/opensearch:1.0 Image 가 생성되어있다.
+    ```shell
+    # docker 이미지 리스트 확인
+    $ docker images
+    
+    REPOSITORY                TAG       IMAGE ID       CREATED        SIZE
+    mydockername/opensearch   1.0       ************   37 hours ago   3.24GB
+    ```
+  - Docker run datanode3 생성 터미널에 입력
+    ```shell
+    docker run -it \
+    --name datanode3 \
+    --network test-network \
+    -h datanode3 \
+    -u worker \
+    -p 9204:9200 \
+    -p 9304:9300 \
+    -p 9254:9250 \
+    -p 9604:9600 \
+    mydockername/opensearch:1.0
+    ```
+    
+    ```shell
+    # docker container 접속확인
+    worker@datanode3:~$
+    ```
+    실행 중인 컨테이너중 "datanode3" 있는지 확인
+    ```shell
+    $ docker ps -a | grep datanode3
+    ```
+    
+3. Opensearch Start
+    - Opensearch Config Setting
+      ```shell
+      $ vi $OPENSEARCH_HOME/config/opensearch.yml
+      ```
+      
+      ```shell
+      # $OPENSEARCH_HOME/config/opensearch.yml
+      plugins.security.disabled: true
+      cluster.name: opensearch-cluster
+      node.name: opensearch-d3
+      node.roles: [ data, ingest ]
+      network.host: 0.0.0.0
+      discovery.seed_hosts: [manager_node]
+      ```
+
+   - OpenSearch Start
+     ```shell
+     $ sudo systemctl start opensearch.service
+     ```
+
+   - Status Follow
+     로그확인
+     ```sheell
+     $ tail -f $OPENSEARCH_HOME/logs/opensearch-cluster.log
+     ```
+     
+4. Elasticvue Node 확인
+   ADD Cluster > http://localhost:9203 > CONNECT > NODES
+   ![스크린샷 2023-08-04 오전 12 00 52](https://github.com/Themath93/opensearch-cluster/assets/108844287/2ddd6e95-0791-4897-9227-81e8077ffa42)
+
+     
+      
+
+[Quick Start 링크]:[###-Quick-Start]
 [Link]: https://chrome.google.com/webstore/detail/elasticvue/hkedbapjpblbodpgbajblpnlpenaebaa
